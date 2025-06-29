@@ -2,7 +2,6 @@
 //  Item.swift
 //  gembg
 //
-//  Created by Nipuna Chandimal on 2025-06-29.
 //
 
 import Foundation

@@ -1,61 +1,68 @@
-//
-//  ContentView.swift
-//  gembg
-//
-//  Created by Nipuna Chandimal on 2025-06-29.
-//
 
 import SwiftUI
-import SwiftData
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+    @State private var taskName: String = ""
+    @State private var taskDate: Date = Date()
+    @State private var tasks: [Task] = []
 
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
+        NavigationView {
+            VStack {
+                TextField("Task Name", text: $taskName)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding()
+
+                DatePicker("Task Time", selection: $taskDate, in: Date()...)
+                    .padding()
+
+                Button(action: {
+                    let newTask = Task(name: taskName, executionTime: taskDate)
+                    TaskManager.shared.scheduleTask(task: newTask)
+                    taskName = ""
+                    loadTasks()
+                }) {
+                    Text("Schedule Task")
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+                }
+                Spacer()
+                List(tasks) { task in
+                    VStack(alignment: .leading) {
+                        Text(task.name).font(.headline)
+                        Text("Execute at: \(task.executionTime, formatter: itemFormatter)").font(.subheadline)
                     }
                 }
-                .onDelete(perform: deleteItems)
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
+                .onAppear(perform: loadTasks)
+                
+                List(tasks.filter { $0.executed }) { task in
+                    VStack(alignment: .leading) {
+                        Text(task.name).font(.headline)
+                        Text("Execute at: \(task.executionTime, formatter: itemFormatter)").font(.subheadline)
                     }
                 }
+                .onAppear(perform: loadTasks)
             }
-        } detail: {
-            Text("Select an item")
+            .navigationTitle("Task Scheduler")
         }
     }
 
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
-            }
-        }
+    private func loadTasks() {
+        tasks = TaskManager.shared.getTasks()
     }
 }
 
-#Preview {
-    ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+private let itemFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.dateStyle = .short
+    formatter.timeStyle = .medium
+    return formatter
+}()
+
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+    }
 }

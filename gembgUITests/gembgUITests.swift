@@ -2,7 +2,6 @@
 //  gembgUITests.swift
 //  gembgUITests
 //
-//  Created by Nipuna Chandimal on 2025-06-29.
 //
 
 import XCTest
